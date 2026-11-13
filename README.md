@@ -20,19 +20,13 @@ The editor uses vanilla JavaScript and CSS; a separate frontend framework is not
 
 ### 1. Install the package
 
-In your Laravel application, run:
-
-```bash
-composer require simply-digital/laravel-rich-editor
-```
+> Read the **HOWTO document**. It will give you a step-by-step guide on how to install the package.
 
 Make sure Livewire is installed and configured in the host application. If it is not already installed:
 
 ```bash
 composer require livewire/livewire:^4.4
 ```
-
-> The package must be published to Packagist (or configured as a Composer repository) before the `composer require` command can install it from a remote registry.
 
 ### 2. Publish the editor assets
 
@@ -264,6 +258,16 @@ The host application is responsible for storage configuration, access permission
 The package's configuration file is `config/laravel-rich-editor.php`. The image disk and directory are configured under its `images` settings. If your package release registers a configuration publish tag, publish the config using that tag, then set the disk and directory for your application.
 
 For the default `public` disk, ensure that the public storage symlink exists and that image URLs resolve to your application's domain and port. For remote disks, such as S3, configure the disk's URL and permissions appropriately.
+
+## Appearance and themes
+
+The editor follows the user's system light or dark preference by default. To match an application theme that is controlled separately, place the editor inside an ancestor with a `.dark` class or `data-theme="dark"` attribute. Use `.light` or `data-theme="light"` to force the light appearance.
+
+The editor's text, toolbar controls, editing surface, source mode, tables, and focus indicators adapt with the theme. If you have published the assets, republish them after updating the package:
+
+```bash
+php artisan vendor:publish --tag=laravel-rich-editor-assets --force
+```
 
 ## Public integration contract
 

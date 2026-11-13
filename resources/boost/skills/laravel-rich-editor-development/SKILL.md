@@ -17,25 +17,26 @@ Use this skill when a Laravel application needs to integrate the Laravel Rich Ed
 
 ## Workflow
 
-### 1. Inspect the Laravel app context
+### 1. Install and load the package
 
-- confirm the app is a Laravel project
-- inspect the target code paths where the package should be applied
+- Follow the installation and asset-publishing steps in the package README.
+- Confirm Livewire is installed and the published JavaScript and CSS assets load once.
 
-### 2. Apply the package's public API
+### 2. Bind editor content in Livewire
 
-Document how to integrate Laravel Rich Editor here, replacing this placeholder with the integration steps for your package.
+- Mount the package's Livewire editor in the form and bind it to a public string property with `wire:model`.
+- Keep validation, authorization, HTML sanitization, and persistence in the host application.
 
-## Rules, References, and Templates
+### 3. Match the host theme
 
-Read before executing:
+- The editor follows the system light/dark preference by default.
+- For an app-controlled theme, wrap it in `.dark` or `data-theme="dark"` to force dark mode; use `.light` or `data-theme="light"` to force light mode.
 
-- no additional resource files for this skill
+## References
 
-## Examples
-
-- describe a representative integration scenario for Laravel Rich Editor
+- Read the package README for installation, Livewire binding, image storage, and HTML-sanitization guidance.
 
 ## Anti-patterns
 
-- do not document package internals here; keep the skill focused on adoption in Laravel apps
+- Do not assume the editor sanitizes HTML or persists content for the host application.
+- Do not load the published editor assets twice.
