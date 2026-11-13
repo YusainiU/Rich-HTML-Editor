@@ -3,17 +3,12 @@
     <script src="{{ asset('vendor/laravel-rich-editor/js/rich-editor.js') }}" defer></script>
 @endassets
 
-<div 
-    class="lre" 
-    data-rich-editor 
-    x-data="{
-        html: $wire.entangle('value'),
-        update(event) {
-            this.html = event.detail.html;
-        }
-    }" 
-    x-on:rich-editor:change="update($event)"
->
+<div class="lre" data-rich-editor x-data="{
+    html: $wire.entangle('value'),
+    update(event) {
+        this.html = event.detail.html;
+    }
+}" x-on:rich-editor:change="update($event)">
 
     <div class="lre-toolbar" role="toolbar" aria-label="Text formatting">
 
@@ -85,6 +80,39 @@
 
         <span class="lre-toolbar-divider" aria-hidden="true"></span>
 
+        <button type="button" data-rich-editor-command="insert-table" aria-label="Insert table" title="Insert table">
+            Table
+        </button>
+
+        <button type="button" data-rich-editor-table-action="row-above" title="Insert row above">
+            Row ↑
+        </button>
+
+        <button type="button" data-rich-editor-table-action="row-below" title="Insert row below">
+            Row ↓
+        </button>
+
+        <button type="button" data-rich-editor-table-action="column-left" title="Insert column left">
+            Col ←
+        </button>
+
+        <button type="button" data-rich-editor-table-action="column-right" title="Insert column right">
+            Col →
+        </button>
+
+        <button type="button" data-rich-editor-table-action="delete-row" title="Delete selected row">
+            Del Row
+        </button>
+
+        <button type="button" data-rich-editor-table-action="delete-column" title="Delete selected column">
+            Del Col
+        </button>
+
+        <button type="button" data-rich-editor-table-action="delete-table" title="Delete selected table">
+            Del Table
+        </button>
+
+
         <button type="button" data-rich-editor-source-toggle aria-label="Toggle HTML source mode" aria-pressed="false"
             title="Toggle HTML source mode">
             &lt;/&gt; HTML
@@ -94,30 +122,14 @@
 
     <div wire:ignore>
 
-        <textarea 
-            data-rich-editor-initial-value 
-            hidden
-        >{{ $value }}</textarea>
+        <textarea data-rich-editor-initial-value hidden>{{ $value }}</textarea>
 
-        <div 
-            class="lre-surface" 
-            data-rich-editor-surface 
-            contenteditable="true" 
-            role="textbox"
-            aria-label="Rich text editor" 
-            aria-multiline="true" 
-            data-placeholder="{{ $placeholder }}"
-            style="min-height: {{ $minHeight }}px;"
-        ></div>
+        <div class="lre-surface" data-rich-editor-surface contenteditable="true" role="textbox"
+            aria-label="Rich text editor" aria-multiline="true" data-placeholder="{{ $placeholder }}"
+            style="min-height: {{ $minHeight }}px;"></div>
 
-        <textarea
-            class="lre-source"
-            data-rich-editor-source
-            aria-label="HTML source code"
-            spellcheck="false"
-            hidden
-            wire:ignore
-        ></textarea>
+        <textarea class="lre-source" data-rich-editor-source aria-label="HTML source code" spellcheck="false" hidden
+            wire:ignore></textarea>
 
     </div>
 

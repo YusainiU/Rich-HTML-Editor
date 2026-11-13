@@ -1,5 +1,4 @@
 (function () {
-    
     "use strict";
 
     const INLINE_FORMATS = {
@@ -732,6 +731,400 @@
         return true;
     }
 
+    function parseTableDimension(value) {
+        if (value === null) {
+            return null;
+        }
+
+        const input = value.trim();
+
+        if (!/^\d+$/.test(input)) {
+            return null;
+        }
+
+        const number = Number(input);
+
+        if (!Number.isSafeInteger(number) || number < 1 || number > 20) {
+            return null;
+        }
+
+        return number;
+    }
+
+    function createTableElement(rows, columns) {
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const tbody = document.createElement("tbody");
+
+        const headerRow = document.createElement("tr");
+
+        for (let column = 0; column < columns; column++) {
+            const cell = document.createElement("th");
+
+            cell.setAttribute("scope", "col");
+            cell.appendChild(document.createElement("br"));
+
+            headerRow.appendChild(cell);
+        }
+
+        thead.appendChild(headerRow);
+
+        for (let row = 1; row < rows; row++) {
+            const tableRow = document.createElement("tr");
+
+            for (let column = 0; column < columns; column++) {
+                const cell = document.createElement("td");
+
+                cell.appendChild(document.createElement("br"));
+                tableRow.appendChild(cell);
+            }
+
+            tbody.appendChild(tableRow);
+        }
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+
+        return table;
+    }
+
+    function placeCaretInFirstTableCell(table, surface) {
+        const firstCell = table.querySelector("th, td");
+
+        if (!firstCell) {
+            return;
+        }
+
+        const selection = window.getSelection();
+        const range = document.createRange();
+
+        range.selectNodeContents(firstCell);
+        range.collapse(true);
+
+        surface.focus();
+
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
+    function insertTable(surface, savedRange, rows, columns) {
+        if (!restoreRange(surface, savedRange)) {
+            return false;
+        }
+
+        const range = getEditorRange(surface);
+
+        if (!range) {
+            return false;
+        }
+
+        if (!range.collapsed) {
+            window.alert(
+                "Place the cursor at an insertion point without selecting text.",
+            );
+
+            return false;
+        }
+
+        // Avoid nesting a table inside another table.
+        const startElement =
+            range.startContainer.nodeType === Node.TEXT_NODE
+                ? range.startContainer.parentElement
+                : range.startContainer;
+
+        const listItem = startElement.closest("li");
+
+        if (listItem && surface.contains(listItem)) {
+            window.alert(
+                "Move the cursor outside the list before inserting a table.",
+            );
+
+            return false;
+        }
+
+        if (startElement?.closest("table")) {
+            window.alert(
+                "Move the cursor outside the existing table before inserting another table.",
+            );
+
+            return false;
+        }
+
+        const table = createTableElement(rows, columns);
+
+        // Insert at block level, immediately after the
+        // current paragraph or heading.
+
+        const block = closestBlock(range.startContainer, surface);
+
+        if (block) {
+            let insertionPoint = block;
+
+            while (
+                insertionPoint.parentElement &&
+                insertionPoint.parentElement !== surface
+            ) {
+                insertionPoint = insertionPoint.parentElement;
+            }
+
+            insertionPoint.after(table);
+        } else if (surface.textContent.trim() === "") {
+            surface.appendChild(table);
+        } else {
+            window.alert(
+                "Place the cursor inside a paragraph or heading before inserting a table.",
+            );
+
+            return false;
+        }
+
+        // Add a paragraph after the table so users can
+        // continue typing outside it.
+        const paragraph = document.createElement("p");
+        paragraph.appendChild(document.createElement("br"));
+
+        table.after(paragraph);
+
+        placeCaretInFirstTableCell(table, surface);
+
+        return true;
+    }
+
+    function getTableContext(surface) {
+        const range = getEditorRange(surface);
+
+        if (!range || !range.collapsed) {
+            return null;
+        }
+
+        const node = range.startContainer;
+
+        const element =
+            node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+
+        const cell = element?.closest("td, th");
+
+        if (!cell || !surface.contains(cell)) {
+            return null;
+        }
+
+        const row = cell.closest("tr");
+        const table = cell.closest("table");
+
+        if (!row || !table || !surface.contains(table)) {
+            return null;
+        }
+
+        const rowIndex = row.rowIndex;
+        const columnIndex = cell.cellIndex;
+
+        if (rowIndex < 0 || columnIndex < 0) {
+            return null;
+        }
+
+        return {
+            table,
+            row,
+            cell,
+            rowIndex,
+            columnIndex,
+        };
+    }
+
+    function createEmptyTableCell(tagName) {
+        const cell = document.createElement(tagName);
+
+        if (tagName === "th") {
+            cell.setAttribute("scope", "col");
+        }
+
+        cell.appendChild(document.createElement("br"));
+
+        return cell;
+    }
+
+    function focusTableCell(surface, cell) {
+        if (!cell) {
+            surface.focus();
+            return;
+        }
+
+        const selection = window.getSelection();
+
+        if (!selection) {
+            return;
+        }
+
+        const range = document.createRange();
+
+        range.selectNodeContents(cell);
+        range.collapse(true);
+
+        surface.focus();
+
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
+    function editTable(surface, action) {
+        const context = getTableContext(surface);
+
+        if (!context) {
+            return false;
+        }
+
+        const { table, row, cell, rowIndex, columnIndex } = context;
+
+        const rows = Array.from(table.rows);
+        const columnCount = rows[0]?.cells.length ?? 0;
+
+        // This stage supports rectangular tables without
+        // merged cells (colspan or rowspan).
+        const hasMergedCells = table.querySelector(
+            "td[colspan], td[rowspan], th[colspan], th[rowspan]",
+        );
+
+        const isRectangular = rows.every(
+            (item) => item.cells.length === columnCount,
+        );
+
+        if (hasMergedCells || !isRectangular) {
+            window.alert(
+                "Editing merged or irregular tables is not supported yet.",
+            );
+
+            return false;
+        }
+
+        if (action === "delete-table") {
+            const paragraph = document.createElement("p");
+            paragraph.appendChild(document.createElement("br"));
+
+            table.replaceWith(paragraph);
+            focusTableCell(surface, null);
+            placeCaretAtEnd(paragraph);
+
+            return true;
+        }
+
+        if (action === "row-above" || action === "row-below") {
+            if (rows.length >= 20) {
+                window.alert("A table can contain at most 20 rows.");
+                return false;
+            }
+
+            const newRow = document.createElement("tr");
+            const isHeaderRow = row.parentElement.tagName === "THEAD";
+
+            for (let column = 0; column < columnCount; column++) {
+                newRow.appendChild(
+                    createEmptyTableCell(
+                        isHeaderRow && action === "row-above" ? "th" : "td",
+                    ),
+                );
+            }
+
+            if (action === "row-above") {
+                row.before(newRow);
+            } else {
+                if (row.parentElement.tagName === "THEAD") {
+                    let tbody = table.tBodies[0];
+
+                    if (!tbody) {
+                        tbody = document.createElement("tbody");
+                        table.appendChild(tbody);
+                    }
+
+                    tbody.prepend(newRow);
+                } else {
+                    row.after(newRow);
+                }
+            }
+
+            focusTableCell(surface, newRow.cells[columnIndex]);
+
+            return true;
+        }
+
+        if (action === "column-left" || action === "column-right") {
+            if (columnCount >= 20) {
+                window.alert("A table can contain at most 20 columns.");
+                return false;
+            }
+
+            for (const currentRow of rows) {
+                const existingCell = currentRow.cells[columnIndex];
+
+                const tagName =
+                    currentRow.parentElement.tagName === "THEAD" ? "th" : "td";
+
+                const newCell = createEmptyTableCell(tagName);
+
+                if (action === "column-left") {
+                    existingCell.before(newCell);
+                } else {
+                    existingCell.after(newCell);
+                }
+            }
+
+            const newIndex =
+                action === "column-left" ? columnIndex : columnIndex + 1;
+
+            focusTableCell(surface, row.cells[newIndex]);
+
+            return true;
+        }
+
+        if (action === "delete-row") {
+            if (rows.length === 1) {
+                window.alert(
+                    "Cannot delete the only row. Use Delete Table instead.",
+                );
+                return false;
+            }
+
+            // Do not remove the only header row.
+            if (row.parentElement.tagName === "THEAD") {
+                window.alert(
+                    "The header row cannot be deleted in this version.",
+                );
+                return false;
+            }
+
+            row.remove();
+
+            const remainingRows = Array.from(table.rows);
+
+            const nextRow =
+                remainingRows[Math.min(rowIndex, remainingRows.length - 1)];
+
+            focusTableCell(surface, nextRow?.cells[columnIndex]);
+
+            return true;
+        }
+
+        if (action === "delete-column") {
+            if (columnCount === 1) {
+                window.alert(
+                    "Cannot delete the only column. Use Delete Table instead.",
+                );
+                return false;
+            }
+
+            for (const currentRow of rows) {
+                currentRow.cells[columnIndex].remove();
+            }
+
+            const nextIndex = Math.min(columnIndex, columnCount - 2);
+
+            focusTableCell(surface, row.cells[nextIndex]);
+
+            return true;
+        }
+
+        return false;
+    }
+
     function initializeEditor(editor) {
         if (editor.dataset.editorInitialized === "true") {
             return;
@@ -765,6 +1158,7 @@
         function commitChange(groupTyping = false) {
             history.pushSnapshot(groupTyping);
             notifyChange(editor, surface);
+            updateTableActionButtons();
         }
 
         function enterSourceMode() {
@@ -823,11 +1217,58 @@
             }
         }
 
+        const tableActionButtons = Array.from(
+            editor.querySelectorAll("[data-rich-editor-table-action]"),
+        );
+
+        function updateTableActionButtons() {
+            const insideTable =
+                !isSourceMode && getTableContext(surface) !== null;
+
+            tableActionButtons.forEach((button) => {
+                button.disabled = !insideTable;
+            });
+        }
+
         const toolbar = editor.querySelector(".lre-toolbar");
 
         if (toolbar) {
             let savedLinkRange = null;
             let savedColorRange = null;
+            let savedTableRange = null;
+
+            toolbar.addEventListener("mousedown", (event) => {
+                const button = event.target.closest(
+                    "[data-rich-editor-table-action]",
+                );
+
+                if (!button || !toolbar.contains(button)) {
+                    return;
+                }
+
+                // Preserve the selection inside the table.
+                event.preventDefault();
+            });
+
+            toolbar.addEventListener("click", (event) => {
+                const button = event.target.closest(
+                    "[data-rich-editor-table-action]",
+                );
+
+                if (!button || !toolbar.contains(button) || button.disabled) {
+                    return;
+                }
+
+                history.breakTypingGroup();
+
+                const action = button.dataset.richEditorTableAction;
+
+                if (editTable(surface, action)) {
+                    commitChange();
+                }
+
+                updateTableActionButtons();
+            });
 
             toolbar.addEventListener("mousedown", (event) => {
                 const button = event.target.closest(
@@ -842,6 +1283,12 @@
                     const range = getEditorRange(surface);
 
                     savedLinkRange = range ? range.cloneRange() : null;
+                }
+
+                if (button.dataset.richEditorCommand === "insert-table") {
+                    const range = getEditorRange(surface);
+
+                    savedTableRange = range ? range.cloneRange() : null;
                 }
 
                 // Preserve editor selection when clicking toolbar buttons.
@@ -875,6 +1322,51 @@
                     savedLinkRange = null;
                 } else if (command === "unlink") {
                     changed = removeLink(surface);
+                } else if (command === "insert-table") {
+                    if (!savedTableRange) {
+                        window.alert(
+                            "Place the cursor inside the editor before inserting a table.",
+                        );
+                    } else {
+                        const rowsInput = window.prompt(
+                            "Number of rows (1–20, including header):",
+                            "3",
+                        );
+
+                        if (rowsInput !== null) {
+                            const rows = parseTableDimension(rowsInput);
+
+                            if (rows === null) {
+                                window.alert(
+                                    "Please enter a whole number between 1 and 20 for rows.",
+                                );
+                            } else {
+                                const columnsInput = window.prompt(
+                                    "Number of columns (1–20):",
+                                    "3",
+                                );
+
+                                if (columnsInput !== null) {
+                                    const columns =
+                                        parseTableDimension(columnsInput);
+
+                                    if (columns === null) {
+                                        window.alert(
+                                            "Please enter a whole number between 1 and 20 for columns.",
+                                        );
+                                    } else {
+                                        changed = insertTable(
+                                            surface,
+                                            savedTableRange,
+                                            rows,
+                                            columns,
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    savedTableRange = null;
                 }
                 if (changed) {
                     commitChange();
@@ -957,6 +1449,7 @@
             undoButton.addEventListener("click", () => {
                 if (history.undo()) {
                     notifyChange(editor, surface);
+                    updateTableActionButtons();
                 }
             });
         }
@@ -965,6 +1458,7 @@
             redoButton.addEventListener("click", () => {
                 if (history.redo()) {
                     notifyChange(editor, surface);
+                    updateTableActionButtons();
                 }
             });
         }
@@ -995,6 +1489,8 @@
             formattingControls.forEach((control) => {
                 control.disabled = isSourceMode;
             });
+
+            updateTableActionButtons();
         }
 
         surface.addEventListener("keydown", (event) => {
@@ -1088,6 +1584,14 @@
             }
         });
 
+        surface.addEventListener("mouseup", updateTableActionButtons);
+
+        surface.addEventListener("keyup", updateTableActionButtons);
+
+        surface.addEventListener("focusin", updateTableActionButtons);
+
+        updateTableActionButtons();
+
         editor.dataset.editorInitialized = "true";
 
         const counter = editor.querySelector("[data-rich-editor-word-count]");
@@ -1110,5 +1614,4 @@
     }
 
     document.addEventListener("livewire:navigated", initializeAllEditors);
-
 })();

@@ -263,3 +263,61 @@
 .lre [hidden] {
     display: none !important;
 }
+
+/* Step 5.6.1 — Tables */
+
+.lre-surface table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    table-layout: fixed;
+}
+
+.lre-surface th,
+.lre-surface td {
+    border: 1px solid #cbd5e1;
+    padding: 0.625rem;
+    min-width: 3rem;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+
+.lre-surface th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    text-align: left;
+}
+
+.lre-surface td {
+    background-color: #ffffff;
+}
+
+.lre-surface th:focus,
+.lre-surface td:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: -2px;
+}
+
+.lre-surface table + p {
+    min-height: 1.25rem;
+}
+
+/* Step 5.6.2 — Table editing */
+
+.lre-toolbar [data-rich-editor-table-action] {
+    white-space: nowrap;
+}
+
+.lre-toolbar [data-rich-editor-table-action]:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.lre-surface table {
+    border-collapse: collapse;
+}
+
+.lre-surface th,
+.lre-surface td {
+    position: relative;
+}
