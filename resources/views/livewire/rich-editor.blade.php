@@ -84,6 +84,22 @@
             Table
         </button>
 
+        <button type="button" data-rich-editor-command="insert-image" aria-label="Insert image"
+            title="Insert image from URL">
+            Image
+        </button>
+
+        <input 
+            type="file" 
+            accept="image/jpeg,image/png,image/webp,image/gif" 
+            data-rich-editor-image-upload  
+            style="position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden;"
+        >
+
+        <button type="button" data-rich-editor-upload-button title="Upload image" aria-label="Upload image">
+            Upload Image
+        </button>
+
         <button type="button" data-rich-editor-table-action="row-above" title="Insert row above">
             Row ↑
         </button>
@@ -112,9 +128,8 @@
             Del Table
         </button>
 
-
-        <button type="button" data-rich-editor-source-toggle aria-label="Toggle HTML source mode" aria-pressed="false"
-            title="Toggle HTML source mode">
+        <button type="button" data-rich-editor-source-toggle aria-label="Toggle HTML source mode"
+            aria-pressed="false" title="Toggle HTML source mode">
             &lt;/&gt; HTML
         </button>
 

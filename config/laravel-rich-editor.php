@@ -21,4 +21,9 @@ return [
         'show_word_count' => true,
     ],
 
+    'images' => [
+        'disk' => 'public',
+        'directory' => 'rich-editor',
+    ],
+
 ];
