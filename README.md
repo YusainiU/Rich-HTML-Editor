@@ -20,13 +20,7 @@ The editor uses vanilla JavaScript and CSS; a separate frontend framework is not
 
 ### 1. Install the package
 
-> Read the **HOWTO document**. It will give you a step-by-step guide on how to install the package.
-
-Make sure Livewire is installed and configured in the host application. If it is not already installed:
-
-```bash
-composer require livewire/livewire:^4.4
-```
+> Follow the steps provided in HOWTO_INSTALL document
 
 ### 2. Publish the editor assets
 
@@ -253,21 +247,101 @@ Uploaded files are separate from the HTML saved by the consuming application. Th
 
 The host application is responsible for storage configuration, access permissions, backups, and any image cleanup or retention policy. Removing an image from editor content does not automatically imply that the file is deleted from storage.
 
-### Configure image storage
+### Choose the upload directory per editor
+
+The consuming application can specify **`image-directory`** on each editor instance. The value is a **relative path inside the configured filesystem disk's root**, not an absolute filesystem path or public URL.
+
+```blade
+<livewire:rich-editor
+    wire:model="contentHtml"
+    image-directory="blogger"
+/>
+```
+
+For example, if the application's `config/filesystems.php` contains:
+
+```php
+'public' => [
+    'driver' => 'local',
+    'root' => storage_path('app/public'),
+    'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/') . '/storage',
+    'visibility' => 'public',
+    'throw' => false,
+    'report' => false,
+],
+```
+
+then `image-directory="blogger"` stores uploaded files in:
+
+```text
+storage/app/public/blogger/<generated-filename>.jpg
+```
+
+With a standard public storage link, the image can be served from:
+
+```text
+/storage/blogger/<generated-filename>.jpg
+```
+
+**Do not** pass `storage/app/public/blogger`, `/storage/blogger`, or an absolute path as `image-directory`: the storage disk already defines its root.
+
+You can organize uploads by workflow:
+
+```blade
+{{-- All blog images in one directory --}}
+<livewire:rich-editor wire:model="contentHtml" image-directory="blogger" />
+
+{{-- Existing post: use its ID to group images --}}
+<livewire:rich-editor
+    wire:model="contentHtml"
+    :image-directory="'blogger/posts/' . $postId"
+/>
+```
+
+For new posts without an ID, prefer a stable directory such as `blogger` or a server-generated draft identifier. **Do not assume** images automatically move when a draft becomes a saved post. The directory is set when the editor mounts; the package's locked `imageDirectory` property prevents browser-side changes during that component's lifetime. The application must authorize access to the relevant record or workflow before choosing its directory.
+
+If `image-directory` is omitted, the editor uses `laravel-rich-editor.images.directory` from the package configuration, defaulting to `rich-editor`. The disk remains controlled by `laravel-rich-editor.images.disk` (default `public`). The per-editor setting changes **only the directory**, not the disk.
+
+### Use your application's existing save logic
+
+You do **not** need to use a package-provided save method. Bind the editor to the HTML property your application already validates and persists:
+
+```php
+// In your application's Livewire form component:
+public string $contentHtml = '';
+
+public function save(): void
+{
+    $validated = $this->validate([
+        'contentHtml' => ['nullable', 'string'],
+    ]);
+
+    // Use your existing authorization, HTML sanitization,
+    // model/service, and transaction logic here.
+    $safeHtml = \Mews\Purifier\Facades\Purifier::clean(
+        $validated['contentHtml'] ?? ''
+    );
+
+    // Example only: save to your application's own column.
+    $this->post->update(['content_html' => $safeHtml]);
+}
+```
+
+```blade
+{{-- In your application's Livewire form Blade view: --}}
+<livewire:rich-editor
+    wire:model="contentHtml"
+    image-directory="blogger"
+/>
+```
+
+For an existing post, initialize `$contentHtml` from the database in your form's `mount()` method. If the application also supports Markdown, it can keep its existing HTML-to-Markdown conversion and save/preview actions; the package only supplies the rich-text HTML value. Ensure the latest editor value has synchronized before converting or saving, and configure your HTML sanitizer to allow safe image tags and attributes.
+
+### Configure image storage globally
 
 The package's configuration file is `config/laravel-rich-editor.php`. The image disk and directory are configured under its `images` settings. If your package release registers a configuration publish tag, publish the config using that tag, then set the disk and directory for your application.
 
 For the default `public` disk, ensure that the public storage symlink exists and that image URLs resolve to your application's domain and port. For remote disks, such as S3, configure the disk's URL and permissions appropriately.
-
-## Appearance and themes
-
-The editor follows the user's system light or dark preference by default. To match an application theme that is controlled separately, place the editor inside an ancestor with a `.dark` class or `data-theme="dark"` attribute. Use `.light` or `data-theme="light"` to force the light appearance.
-
-The editor's text, toolbar controls, editing surface, source mode, tables, and focus indicators adapt with the theme. If you have published the assets, republish them after updating the package:
-
-```bash
-php artisan vendor:publish --tag=laravel-rich-editor-assets --force
-```
 
 ## Public integration contract
 
@@ -276,6 +350,7 @@ The intended Laravel/Livewire API is deliberately small:
 | Feature | How to use it |
 | --- | --- |
 | Bind editor HTML | `<livewire:rich-editor wire:model="content" />` |
+| Choose upload directory | `image-directory="blogger"` (relative to disk root) |
 | Read content | Access `$this->content` in the parent Livewire component |
 | Set initial content | Assign HTML to `$content` before rendering the editor |
 | Validate content | Use the parent component's `$this->validate(...)` |
@@ -295,6 +370,10 @@ php artisan vendor:publish --tag=laravel-rich-editor-assets --force
 ```
 
 Hard-refresh the browser and inspect the browser console and Laravel logs for the specific error.
+
+### Images are saved in an unexpected directory
+
+Check the application's `config/filesystems.php` for the `public` disk's `root`. The `image-directory` value is appended to that root. For example, with `root => storage_path('app/public')`, `image-directory="blogger"` means `storage/app/public/blogger`. Confirm the application has selected the correct disk in `laravel-rich-editor.images.disk` and that the directory was passed when the editor mounted.
 
 ### The image uploads but shows a broken-image icon
 
