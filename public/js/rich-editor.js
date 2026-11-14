@@ -40,9 +40,12 @@
         if (!input) return null;
         try {
             const url = new URL(input);
-            if (!['https:', 'http:'].includes(url.protocol)) return null;
-            if (['unsplash.com', 'www.unsplash.com'].includes(url.hostname)
-                && url.pathname.startsWith('/photos/')) return null;
+            if (!["https:", "http:"].includes(url.protocol)) return null;
+            if (
+                ["unsplash.com", "www.unsplash.com"].includes(url.hostname) &&
+                url.pathname.startsWith("/photos/")
+            )
+                return null;
             return url.href;
         } catch {
             return null;
@@ -894,6 +897,7 @@
         placeCaretAtEnd(nextParagraph);
         return true;
     }
+
     function initializeEditor(editor) {
         if (editor.dataset.editorInitialized === "true") {
             return;
@@ -1196,122 +1200,190 @@
             }
         }
         // STEP 5.6.4 — IMAGE UPLOAD HANDLERS
-            if (uploadButton && uploadInput) {
-                uploadButton.addEventListener("mousedown", (event) => {
-                    event.preventDefault();
-                });
-                uploadButton.addEventListener("click", () => {
-                    if (isSourceMode || uploadInProgress) {
-                        return;
-                    }
-                    const range = getEditorRange(surface);
-                    if (!range || !range.collapsed) {
-                        window.alert(
-                            "Place the cursor inside the editor before uploading an image.",
-                        );
-                        return;
-                    }
-                    savedUploadRange = range.cloneRange();
-                    // Allow choosing the same file again.
-                    uploadInput.value = "";
-                    uploadInput.click();
-                });
-                uploadInput.addEventListener("change", () => {
-                    const file = uploadInput.files?.[0];
-                    if (!file) {
-                        savedUploadRange = null;
-                        return;
-                    }
-                    if (
-                        ![
-                            "image/jpeg",
-                            "image/png",
-                            "image/webp",
-                            "image/gif",
-                        ].includes(file.type)
-                    ) {
-                        window.alert(
-                            "Please select a JPEG, PNG, WebP, or GIF image.",
-                        );
-                        finishImageUpload();
-                        return;
-                    }
-                    if (file.size > 5 * 1024 * 1024) {
-                        window.alert("The image must be 5 MB or smaller.");
-                        finishImageUpload();
-                        return;
-                    }
-                    if (!window.Livewire) {
-                        window.alert(
-                            "Livewire is not available for image uploads.",
-                        );
-                        finishImageUpload();
-                        return;
-                    }
-                    const componentRoot = editor.closest('[wire\\:id]');
-                    const componentId = componentRoot?.getAttribute('wire:id');
-                    const component = componentId
-                        ? window.Livewire.find(componentId)
-                        : null;
-                    if (!component) {
-                        window.alert(
-                            "Could not find the Livewire editor component.",
-                        );
-                        finishImageUpload();
-                        return;
-                    }
-                    uploadInProgress = true;
-                    uploadButton.disabled = true;
-                    component.upload(
-                        "imageUpload",
-                        file,
-                        async () => {
-                            try {
-                                const url = await component.uploadEditorImage();
-                                if (!url || typeof url !== "string") {
-                                    throw new Error(
-                                        "The server did not return an image URL.",
-                                    );
-                                }
-                                if (!savedUploadRange) {
-                                    throw new Error(
-                                        "The image insertion position was lost.",
-                                    );
-                                }
-                                const changed = insertImage(
-                                    surface,
-                                    savedUploadRange,
-                                    url,
-                                    file.name,
+        if (uploadButton && uploadInput) {
+            uploadButton.addEventListener("mousedown", (event) => {
+                event.preventDefault();
+            });
+            uploadButton.addEventListener("click", () => {
+                if (isSourceMode || uploadInProgress) {
+                    return;
+                }
+                const range = getEditorRange(surface);
+                if (!range || !range.collapsed) {
+                    window.alert(
+                        "Place the cursor inside the editor before uploading an image.",
+                    );
+                    return;
+                }
+                savedUploadRange = range.cloneRange();
+                // Allow choosing the same file again.
+                uploadInput.value = "";
+                uploadInput.click();
+            });
+            uploadInput.addEventListener("change", () => {
+                const file = uploadInput.files?.[0];
+                if (!file) {
+                    savedUploadRange = null;
+                    return;
+                }
+                if (
+                    ![
+                        "image/jpeg",
+                        "image/png",
+                        "image/webp",
+                        "image/gif",
+                    ].includes(file.type)
+                ) {
+                    window.alert(
+                        "Please select a JPEG, PNG, WebP, or GIF image.",
+                    );
+                    finishImageUpload();
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    window.alert("The image must be 5 MB or smaller.");
+                    finishImageUpload();
+                    return;
+                }
+                if (!window.Livewire) {
+                    window.alert(
+                        "Livewire is not available for image uploads.",
+                    );
+                    finishImageUpload();
+                    return;
+                }
+                const componentRoot = editor.closest("[wire\\:id]");
+                const componentId = componentRoot?.getAttribute("wire:id");
+                const component = componentId
+                    ? window.Livewire.find(componentId)
+                    : null;
+                if (!component) {
+                    window.alert(
+                        "Could not find the Livewire editor component.",
+                    );
+                    finishImageUpload();
+                    return;
+                }
+                uploadInProgress = true;
+                uploadButton.disabled = true;
+                component.upload(
+                    "imageUpload",
+                    file,
+                    async () => {
+                        try {
+                            const url = await component.uploadEditorImage();
+                            if (!url || typeof url !== "string") {
+                                throw new Error(
+                                    "The server did not return an image URL.",
                                 );
-                                if (changed) {
-                                    commitChange();
-                                }
-                            } catch (error) {
-                                console.error(
-                                    "Rich Editor image upload failed:",
-                                    error,
-                                );
-                                window.alert(
-                                    "The image could not be inserted. Check the browser console and Laravel logs.",
-                                );
-                            } finally {
-                                finishImageUpload();
                             }
-                        },
-                        (error) => {
+                            if (!savedUploadRange) {
+                                throw new Error(
+                                    "The image insertion position was lost.",
+                                );
+                            }
+                            const changed = insertImage(
+                                surface,
+                                savedUploadRange,
+                                url,
+                                file.name,
+                            );
+                            if (changed) {
+                                commitChange();
+                            }
+                        } catch (error) {
                             console.error(
-                                "Rich Editor temporary upload failed:",
+                                "Rich Editor image upload failed:",
                                 error,
                             );
                             window.alert(
-                                "The image upload failed. Check the file size and Laravel upload configuration.",
+                                "The image could not be inserted. Check the browser console and Laravel logs.",
                             );
+                        } finally {
                             finishImageUpload();
-                        },
-                    );
+                        }
+                    },
+                    (error) => {
+                        console.error(
+                            "Rich Editor temporary upload failed:",
+                            error,
+                        );
+                        window.alert(
+                            "The image upload failed. Check the file size and Laravel upload configuration.",
+                        );
+                        finishImageUpload();
+                    },
+                );
+            });
+        }
+
+        // REMOVE ALL HTML TAGS WHILE PRESERVING TEXT
+        const clearFormattingButton = editor.querySelector(
+            "[data-rich-editor-clear-formatting]",
+        );
+
+        if (clearFormattingButton) {
+            clearFormattingButton.addEventListener("click", () => {
+                if (uploadInProgress) {
+                    window.alert("Please wait for the image upload to finish.");
+                    return;
+                }
+
+                const currentHtml =
+                    isSourceMode && source ? source.value : surface.innerHTML;
+
+                if (!currentHtml.trim()) {
+                    return;
+                }
+
+                const confirmed = window.confirm(
+                    "Remove all HTML formatting and keep the text content?",
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                // Apply pending source-mode changes first.
+                if (isSourceMode) {
+                    exitSourceMode();
+                }
+
+                history.breakTypingGroup();
+
+                // Read text from the rendered HTML.
+                // innerText preserves visual line breaks better than textContent.
+                const plainText = surface.innerText
+                    .replace(/\u00a0/g, " ")
+                    .trim();
+
+                // Clear existing HTML elements.
+                surface.replaceChildren();
+
+                // Insert text safely without interpreting it as HTML.
+                // Preserve line breaks using <br> elements.
+                const lines = plainText.split(/\r?\n/);
+
+                lines.forEach((line, index) => {
+                    if (index > 0) {
+                        surface.appendChild(document.createElement("br"));
+                    }
+
+                    surface.appendChild(document.createTextNode(line));
                 });
-            }
+
+                if (source) {
+                    source.value = surface.innerHTML;
+                    sourceChanged = false;
+                }
+
+                // Update undo history, word count, and Livewire.
+                commitChange();
+
+                surface.focus();
+            });
+        }
+
         const undoButton = editor.querySelector(
             '[data-rich-editor-history="undo"]',
         );

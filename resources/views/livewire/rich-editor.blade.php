@@ -72,7 +72,8 @@
         </div>
 
         <div class="lre-toolbar-group" role="group" aria-label="Insert content">
-            <button type="button" data-rich-editor-command="insert-table" aria-label="Insert table" title="Insert table">
+            <button type="button" data-rich-editor-command="insert-table" aria-label="Insert table"
+                title="Insert table">
                 Table
             </button>
             <button type="button" data-rich-editor-command="insert-image" aria-label="Insert image"
@@ -107,6 +108,10 @@
             <button type="button" data-rich-editor-source-toggle aria-label="Toggle HTML source mode"
                 aria-pressed="false" title="Toggle HTML source mode">
                 &lt;/&gt; HTML
+            </button>
+            <button type="button" class="lre-toolbar-button" data-rich-editor-clear-formatting
+                title="Remove all HTML formatting and keep the text" aria-label="Remove HTML formatting">
+                Clear HTML
             </button>
         </div>
     </div>
