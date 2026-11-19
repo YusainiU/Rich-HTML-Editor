@@ -1,223 +1,80 @@
-# Rich HTML Editor — Local Package Installation
+# Installing Laravel Rich Editor
 
-This guide explains how to clone the [Rich HTML Editor](https://github.com/YusainiU/Rich-HTML-Editor) package into a Laravel application's local `packages` directory under the **Simplydigital** namespace and install it using Composer.
+**Package:** `simply-digital/laravel-rich-editor`
 
-## Step 1: Create the packages directory
+## Public installation (Packagist)
 
-From the Laravel project root, run:
-
-```bash
-mkdir -p packages/Simplydigital
-```
-
-## Step 2: Clone the GitHub repository
+Once a release has been published and the package is registered on [Packagist](https://packagist.org/), install it in a Laravel 12/13 application with Livewire 4.4 or newer:
 
 ```bash
-git clone https://github.com/YusainiU/Rich-HTML-Editor.git packages/Simplydigital/Rich-HTML-Editor
+composer require simply-digital/laravel-rich-editor
+php artisan vendor:publish --tag=laravel-rich-editor-assets --force
+php artisan storage:link
 ```
 
-Your project structure should look like:
+Bind the editor to a public property in a parent Livewire component:
 
-```text
-laravel-project/
-├── app/
-├── bootstrap/
-├── config/
-├── packages/
-│   └── Simplydigital/
-│       └── Rich-HTML-Editor/
-│           ├── composer.json
-│           └── ...
-├── vendor/
-├── composer.json
-└── artisan
+```blade
+<livewire:laravel-rich-editor wire:model="contentHtml" />
 ```
 
-## Step 3: Update the package's composer.json
+For an existing record, initialize the parent's `$contentHtml` property from the saved HTML before rendering the editor. The parent application owns validation, authorization, server-side HTML sanitization, and persistence.
 
-Open:
+After upgrading the package, republish assets and hard-refresh your browser:
 
-```text
-packages/Simplydigital/Rich-HTML-Editor/composer.json
+```bash
+php artisan vendor:publish --tag=laravel-rich-editor-assets --force
+php artisan view:clear
 ```
 
-Update the package's `name` property to:
+See [README.md](README.md) for configuration, image uploads, and usage examples.
+
+## Install from GitHub before the first Packagist release
+
+Add this repository as a VCS source in your Laravel application's `composer.json`:
 
 ```json
-"name": "simplydigital/rich-html-editor"
+"repositories": [
+    {
+        "type": "vcs",
+        "url": "https://github.com/YusainiU/Rich-HTML-Editor"
+    }
+]
 ```
 
-Keep the existing package dependencies, autoload settings, service providers, and other configuration unchanged.
+Then install the main development branch:
 
-## Step 4: Register the local package in Laravel's composer.json
+```bash
+composer require simply-digital/laravel-rich-editor:"dev-main"
+```
 
-Open your Laravel application's root `composer.json` and add the following top-level configuration:
+A development branch is not a stable release. Remove the custom VCS repository once the package is available on Packagist and update the requirement to a tagged version.
+
+## Local package development
+
+Clone the repository into your application's local packages directory:
+
+```bash
+mkdir -p packages
+git clone https://github.com/YusainiU/Rich-HTML-Editor.git packages/Rich-HTML-Editor
+```
+
+Add a path repository to the consuming application's `composer.json`:
 
 ```json
 "repositories": [
     {
         "type": "path",
-        "url": "packages/Simplydigital/Rich-HTML-Editor",
-        "options": {
-            "symlink": true
-        }
+        "url": "packages/Rich-HTML-Editor",
+        "options": { "symlink": true }
     }
 ]
 ```
 
-This tells Composer to load Rich HTML Editor from your local directory.
-
-The `symlink` option ensures that changes to the local package source are reflected in the installed package.
-
-## Step 5: Check the package's Git branch
-
-Navigate into the package directory:
+Then require the package without changing the package's own `composer.json`:
 
 ```bash
-cd packages/Simplydigital/Rich-HTML-Editor
+composer require simply-digital/laravel-rich-editor:"dev-main"
 ```
 
-Check the current branch:
-
-```bash
-git branch --show-current
-```
-
-If the branch is `main`, its Composer development version is typically `dev-main`.
-
-If the branch is `master`, use `dev-master`.
-
-Return to the Laravel project root:
-
-```bash
-cd ../../..
-```
-
-## Step 6: Install the package using Composer
-
-Assuming the package uses the `main` branch, run:
-
-```bash
-composer require simplydigital/rich-html-editor:"dev-main"
-```
-
-Composer will register the package as a project dependency, resolve its dependencies, and create a symlink in your `vendor` directory.
-
-Your Laravel project's `composer.json` will now include:
-
-```json
-"require": {
-    "simplydigital/rich-html-editor": "dev-main"
-}
-```
-
-This is the new entry; keep all existing dependencies in the `require` section.
-
-## Step 7: Verify the installation
-
-Run:
-
-```bash
-composer show simplydigital/rich-html-editor
-```
-
-Check the symlink:
-
-```bash
-ls -la vendor/simplydigital/
-```
-
-The installed package should point to:
-
-```text
-packages/Simplydigital/Rich-HTML-Editor
-```
-
-## Step 8: Refresh Laravel
-
-If the package supports Laravel service provider auto-discovery, run:
-
-```bash
-php artisan package:discover
-```
-
-Clear Laravel's caches:
-
-```bash
-php artisan optimize:clear
-```
-
-If you change the package's Composer autoload configuration, regenerate the autoloader:
-
-```bash
-composer dump-autoload
-```
-
-## Step 9: Modify the package locally
-
-You can now edit the Rich HTML Editor source code inside:
-
-```text
-packages/Simplydigital/Rich-HTML-Editor/
-```
-
-Because the package uses a Composer path repository with symbolic linking, changes to its PHP source files are available directly to the Laravel application.
-
-## Step 10: Git and deployment considerations
-
-The cloned package contains its own Git repository. Decide whether to maintain it independently, use a Git submodule, or commit its source directly into the Laravel project.
-
-When deploying, ensure that `packages/Simplydigital/Rich-HTML-Editor` is present before running `composer install`.
-
----
-
-## Quick installation reference
-
-**1. Create directory and clone repository**
-
-```bash
-mkdir -p packages/Simplydigital
-
-git clone https://github.com/YusainiU/Rich-HTML-Editor.git packages/Simplydigital/Rich-HTML-Editor
-```
-
-**2. Change the package's Composer name**
-
-In `packages/Simplydigital/Rich-HTML-Editor/composer.json`:
-
-```json
-"name": "simplydigital/rich-html-editor"
-```
-
-**3. Add the path repository to the root composer.json**
-
-```json
-"repositories": [
-    {
-        "type": "path",
-        "url": "packages/Simplydigital/Rich-HTML-Editor",
-        "options": {
-            "symlink": true
-        }
-    }
-]
-```
-
-**4. Install the package**
-
-```bash
-composer require simplydigital/rich-html-editor:"dev-main"
-```
-
-Use `dev-master` instead if the package's branch is `master`.
-
-**5. Refresh and verify**
-
-```bash
-composer dump-autoload
-php artisan package:discover
-php artisan optimize:clear
-composer show simplydigital/rich-html-editor
-```
-
-The Rich HTML Editor package is now configured as a local Composer dependency under the **Simplydigital** namespace.
+If the local clone is on another branch, use the corresponding Composer development version. Commit your changes to the package repository separately from the consuming Laravel application.
