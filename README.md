@@ -66,12 +66,12 @@ php artisan config:clear
 The editor exposes its HTML through a modelable Livewire property. In your application, bind it to a parent component property:
 
 ```blade
-<livewire:rich-editor wire:model="content" />
+<livewire:laravel-rich-editor wire:model="content" />
 ```
 
 `content` is a property on **your** Livewire component. The editor does not decide how it is stored.
 
-> This example assumes the package registers its component under the alias `rich-editor`. If your installed package uses a different alias, use the alias registered by its service provider.
+> The package registers the component as `laravel-rich-editor`.
 
 ## Tutorial: create a post
 
@@ -128,7 +128,7 @@ In `resources/views/livewire/post-form.blade.php`:
     <form wire:submit="save">
         <label for="post-body">Content</label>
 
-        <livewire:rich-editor wire:model="content" />
+        <livewire:laravel-rich-editor wire:model="content" />
 
         @error('content')
             <p role="alert">{{ $message }}</p>
@@ -205,7 +205,7 @@ In `resources/views/livewire/edit-post.blade.php`:
 ```blade
 <div>
     <form wire:submit="save">
-        <livewire:rich-editor wire:model="content" />
+        <livewire:laravel-rich-editor wire:model="content" />
 
         @error('content')
             <p role="alert">{{ $message }}</p>
@@ -252,7 +252,7 @@ The host application is responsible for storage configuration, access permission
 The consuming application can specify **`image-directory`** on each editor instance. The value is a **relative path inside the configured filesystem disk's root**, not an absolute filesystem path or public URL.
 
 ```blade
-<livewire:rich-editor
+<livewire:laravel-rich-editor
     wire:model="contentHtml"
     image-directory="blogger"
 />
@@ -289,10 +289,10 @@ You can organize uploads by workflow:
 
 ```blade
 {{-- All blog images in one directory --}}
-<livewire:rich-editor wire:model="contentHtml" image-directory="blogger" />
+<livewire:laravel-rich-editor wire:model="contentHtml" image-directory="blogger" />
 
 {{-- Existing post: use its ID to group images --}}
-<livewire:rich-editor
+<livewire:laravel-rich-editor
     wire:model="contentHtml"
     :image-directory="'blogger/posts/' . $postId"
 />
@@ -329,7 +329,7 @@ public function save(): void
 
 ```blade
 {{-- In your application's Livewire form Blade view: --}}
-<livewire:rich-editor
+<livewire:laravel-rich-editor
     wire:model="contentHtml"
     image-directory="blogger"
 />
@@ -349,7 +349,7 @@ The intended Laravel/Livewire API is deliberately small:
 
 | Feature | How to use it |
 | --- | --- |
-| Bind editor HTML | `<livewire:rich-editor wire:model="content" />` |
+| Bind editor HTML | `<livewire:laravel-rich-editor wire:model="content" />` |
 | Choose upload directory | `image-directory="blogger"` (relative to disk root) |
 | Read content | Access `$this->content` in the parent Livewire component |
 | Set initial content | Assign HTML to `$content` before rendering the editor |
@@ -402,7 +402,7 @@ public string $content = '';
 ```
 
 ```blade
-<livewire:rich-editor wire:model="content" />
+<livewire:laravel-rich-editor wire:model="content" />
 ```
 
 Also confirm that the package's Livewire component declares its editor value as modelable.
