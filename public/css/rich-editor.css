@@ -139,6 +139,7 @@
     padding: 1.25rem;
     outline: none;
     overflow-wrap: anywhere;
+    white-space: pre-wrap;
     background: var(--lre-page);
     color: var(--lre-text);
     line-height: 1.7;
