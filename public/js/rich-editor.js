@@ -1418,11 +1418,9 @@
                     exitSourceMode();
                 }
                 history.breakTypingGroup();
-                surface.replaceChildren();
-                plainText.split("\n").forEach((line, index) => {
-                    if (index) surface.appendChild(document.createElement("br"));
-                    surface.appendChild(document.createTextNode(line));
-                });
+                // Keep the result as one text node: no span/div/br markup remains.
+                // CSS white-space: pre-wrap displays the preserved newlines.
+                surface.textContent = plainText;
                 if (source) source.value = surface.innerHTML;
                 commitChange();
 
