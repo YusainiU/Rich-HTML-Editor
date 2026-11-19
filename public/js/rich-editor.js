@@ -1400,15 +1400,15 @@
                 function extractText(node) {
                     if (node.nodeType === Node.TEXT_NODE) return node.textContent || "";
                     if (node.nodeType !== Node.ELEMENT_NODE) return "";
-                    if (node.tagName === "BR") return "\\n";
+                    if (node.tagName === "BR") return "\n";
                     const text = Array.from(node.childNodes).map(extractText).join("");
-                    return blocks.has(node.tagName) ? text + "\\n" : text;
+                    return blocks.has(node.tagName) ? text + "\n" : text;
                 }
                 const plainText = Array.from(parsed.body.childNodes)
                     .map(extractText)
                     .join("")
-                    .replace(/\\u00a0/g, " ")
-                    .replace(/\\n{3,}/g, "\\n\\n")
+                    .replace(/\u00a0/g, " ")
+                    .replace(/\n{3,}/g, "\n\n")
                     .trim();
 
                 if (isSourceMode) {
@@ -1419,7 +1419,7 @@
                 }
                 history.breakTypingGroup();
                 surface.replaceChildren();
-                plainText.split("\\n").forEach((line, index) => {
+                plainText.split("\n").forEach((line, index) => {
                     if (index) surface.appendChild(document.createElement("br"));
                     surface.appendChild(document.createTextNode(line));
                 });
