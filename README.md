@@ -20,7 +20,13 @@ The editor uses vanilla JavaScript and CSS; a separate frontend framework is not
 
 ### 1. Install the package
 
-> Follow the steps provided in HOWTO_INSTALL document
+Install the package after it has been published on Packagist:
+
+```bash
+composer require simply-digital/laravel-rich-editor
+```
+
+For installation from GitHub before the first release, or for local development, see [HOWTO_INSTALL.md](HOWTO_INSTALL.md).
 
 ### 2. Publish the editor assets
 
