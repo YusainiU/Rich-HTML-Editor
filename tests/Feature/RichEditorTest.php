@@ -31,5 +31,5 @@ it('accepts initial HTML content', function () {
 it('allows the word count footer to be disabled', function () {
     Livewire::test(RichEditor::class, [
         'showWordCount' => false,
-    ])->assertDontSee('Word count will appear here.');
+    ])->assertDontSee('data-rich-editor-word-count', escape: false);
 });
