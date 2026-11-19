@@ -52,6 +52,40 @@
         }
     }
 
+    // Rebuild untrusted HTML from an allowlist rather than copying unsafe nodes.
+    function sanitizeEditorHtml(html) {
+        const parsed = new DOMParser().parseFromString(html, "text/html");
+        const allowed = new Set(["P", "DIV", "BR", "STRONG", "B", "EM", "I", "U", "S", "H1", "H2", "H3", "UL", "OL", "LI", "A", "IMG", "TABLE", "THEAD", "TBODY", "TR", "TH", "TD", "SPAN", "BLOCKQUOTE"]);
+        const blocked = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "SVG", "MATH", "FORM", "INPUT", "BUTTON", "TEXTAREA", "SELECT", "TEMPLATE", "META", "LINK", "BASE"]);
+        function clean(node) {
+            if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent);
+            if (node.nodeType !== Node.ELEMENT_NODE) return document.createDocumentFragment();
+            if (blocked.has(node.tagName)) return document.createDocumentFragment();
+            const fragment = document.createDocumentFragment();
+            const tag = node.tagName;
+            const output = allowed.has(tag) ? document.createElement(tag.toLowerCase()) : fragment;
+            if (tag === "A" && output !== fragment) {
+                const href = normalizeLinkUrl(node.getAttribute("href") || "");
+                if (href) output.setAttribute("href", href);
+            }
+            if (tag === "IMG" && output !== fragment) {
+                const src = normalizeImageUrl(node.getAttribute("src") || "");
+                if (!src) return fragment;
+                output.setAttribute("src", src);
+                output.setAttribute("alt", node.getAttribute("alt") || "");
+            }
+            if (tag === "SPAN" && output !== fragment) {
+                const color = node.style.color;
+                if (color && CSS.supports("color", color)) output.style.color = color;
+            }
+            for (const child of Array.from(node.childNodes)) output.appendChild(clean(child));
+            return output;
+        }
+        const container = document.createElement("div");
+        for (const node of Array.from(parsed.body.childNodes)) container.appendChild(clean(node));
+        return container.innerHTML;
+    }
+
     const HISTORY_LIMIT = 100;
     const TYPING_GROUP_DELAY = 700;
     function nodePath(root, node) {
@@ -910,7 +944,18 @@
             "[data-rich-editor-initial-value]",
         );
         if (initialValue) {
-            surface.innerHTML = initialValue.value;
+            surface.innerHTML = sanitizeEditorHtml(initialValue.value);
+        }
+        const alpine = window.Alpine;
+        if (alpine) {
+            alpine.effect(() => {
+                const state = alpine.$data(editor);
+                const incoming = state.html;
+                if (typeof incoming === "string" && incoming !== surface.innerHTML && document.activeElement !== surface && editor.dataset.editorInitialized === "true") {
+                    surface.innerHTML = sanitizeEditorHtml(incoming);
+                    notifyChange(editor, surface);
+                }
+            });
         }
         const history = createHistory(editor, surface);
         const source = editor.querySelector("[data-rich-editor-source]");
@@ -967,7 +1012,7 @@
             const nextHtml = source.value;
             const htmlChanged = sourceChanged && nextHtml !== previousHtml;
             if (htmlChanged) {
-                surface.innerHTML = nextHtml;
+                surface.innerHTML = sanitizeEditorHtml(nextHtml);
             }
             source.hidden = true;
             surface.hidden = false;
