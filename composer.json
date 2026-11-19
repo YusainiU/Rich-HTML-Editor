@@ -1,13 +1,15 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "simply-digital/laravel-rich-editor",
-    "description": "Laravel HTML rich editor",
+    "description": "A lightweight rich-text HTML editor for Laravel and Livewire with image uploads",
     "keywords": [
         "laravel",
-        "simply-digital",
-        "laravel-rich-editor"
+        "livewire",
+        "rich-text-editor",
+        "html-editor",
+        "wysiwyg"
     ],
-    "homepage": "https://github.com/simply-digital/laravel-rich-editor",
+    "homepage": "https://github.com/YusainiU/Rich-HTML-Editor",
     "license": "MIT",
     "authors": [
         {
