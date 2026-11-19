@@ -1389,40 +1389,41 @@
                     return;
                 }
 
-                // Apply pending source-mode changes first.
-                if (isSourceMode) {
-                    exitSourceMode();
+                // Convert the current HTML (including unsaved source edits) directly
+                // to plain text; innerText is unreliable on hidden editor surfaces.
+                const html = isSourceMode && source ? source.value : surface.innerHTML;
+                const parsed = new DOMParser().parseFromString(html, "text/html");
+                for (const element of parsed.body.querySelectorAll("script, style, template, iframe, object, svg, math")) {
+                    element.remove();
                 }
-
-                history.breakTypingGroup();
-
-                // Read text from the rendered HTML.
-                // innerText preserves visual line breaks better than textContent.
-                const plainText = surface.innerText
-                    .replace(/\u00a0/g, " ")
+                const blocks = new Set(["P", "DIV", "H1", "H2", "H3", "H4", "H5", "H6", "LI", "TR", "BLOCKQUOTE"]);
+                function extractText(node) {
+                    if (node.nodeType === Node.TEXT_NODE) return node.textContent || "";
+                    if (node.nodeType !== Node.ELEMENT_NODE) return "";
+                    if (node.tagName === "BR") return "\\n";
+                    const text = Array.from(node.childNodes).map(extractText).join("");
+                    return blocks.has(node.tagName) ? text + "\\n" : text;
+                }
+                const plainText = Array.from(parsed.body.childNodes)
+                    .map(extractText)
+                    .join("")
+                    .replace(/\\u00a0/g, " ")
+                    .replace(/\\n{3,}/g, "\\n\\n")
                     .trim();
 
-                // Clear existing HTML elements.
+                if (isSourceMode) {
+                    // Leave source mode without applying the HTML being discarded.
+                    sourceChanged = false;
+                    source.value = surface.innerHTML;
+                    exitSourceMode();
+                }
+                history.breakTypingGroup();
                 surface.replaceChildren();
-
-                // Insert text safely without interpreting it as HTML.
-                // Preserve line breaks using <br> elements.
-                const lines = plainText.split(/\r?\n/);
-
-                lines.forEach((line, index) => {
-                    if (index > 0) {
-                        surface.appendChild(document.createElement("br"));
-                    }
-
+                plainText.split("\\n").forEach((line, index) => {
+                    if (index) surface.appendChild(document.createElement("br"));
                     surface.appendChild(document.createTextNode(line));
                 });
-
-                if (source) {
-                    source.value = surface.innerHTML;
-                    sourceChanged = false;
-                }
-
-                // Update undo history, word count, and Livewire.
+                if (source) source.value = surface.innerHTML;
                 commitChange();
 
                 surface.focus();
@@ -1529,8 +1530,29 @@
         surface.addEventListener("blur", () => {
             history.breakTypingGroup();
         });
-        surface.addEventListener("paste", () => {
+        surface.addEventListener("paste", (event) => {
             history.breakTypingGroup();
+            if (!event.clipboardData) return;
+            event.preventDefault();
+            const html = event.clipboardData.getData("text/html");
+            const plain = event.clipboardData.getData("text/plain");
+            const selection = window.getSelection();
+            if (!selection || !selection.rangeCount) return;
+            const range = selection.getRangeAt(0);
+            if (!surface.contains(range.commonAncestorContainer)) return;
+            const template = document.createElement("template");
+            if (html) template.innerHTML = sanitizeEditorHtml(html);
+            else template.content.appendChild(document.createTextNode(plain));
+            const last = template.content.lastChild;
+            range.deleteContents();
+            range.insertNode(template.content);
+            if (last) {
+                range.setStartAfter(last);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            commitChange();
         });
         surface.addEventListener("cut", () => {
             history.breakTypingGroup();
