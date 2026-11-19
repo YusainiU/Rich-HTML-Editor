@@ -1,8 +1,11 @@
-# Release Notes
+# Changelog
 
-## [Unreleased](https://github.com/simply-digital/laravel-rich-editor/compare/v0.1.0...1.x)
+All notable changes to this project will be documented here.
 
+## Unreleased
 
-## [v0.1.0](https://github.com/simply-digital/laravel-rich-editor/compare/...v0.1.0) - 202x-xx-xx
+- Prepare public Composer package installation instructions and repository metadata.
+- Add the MIT license file.
+- Clarify local development and release documentation.
 
-Initial pre-release.
+A versioned release will be recorded here when its Git tag is created. No release tag or publication to Packagist is implied by this document.
