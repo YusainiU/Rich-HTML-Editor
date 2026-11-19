@@ -76,7 +76,7 @@
             }
             if (tag === "SPAN" && output !== fragment) {
                 const color = node.style.color;
-                if (color && CSS.supports("color", color)) output.style.color = color;
+                if (color && window.CSS?.supports("color", color)) output.style.color = color;
             }
             for (const child of Array.from(node.childNodes)) output.appendChild(clean(child));
             return output;
