@@ -1590,4 +1590,22 @@
         initializeAllEditors();
     }
     document.addEventListener("livewire:navigated", initializeAllEditors);
+    // Nested Livewire components may be mounted after DOMContentLoaded, especially
+    // when their parent is conditionally rendered in a tab.
+    if (window.Livewire?.hook) {
+        window.Livewire.hook("morph.added", ({ el }) => {
+            if (el.matches?.("[data-rich-editor]")) initializeEditor(el);
+            el.querySelectorAll?.("[data-rich-editor]").forEach(initializeEditor);
+        });
+    }
+    const observer = new MutationObserver((records) => {
+        for (const record of records) {
+            for (const node of record.addedNodes) {
+                if (node.nodeType !== Node.ELEMENT_NODE) continue;
+                if (node.matches?.("[data-rich-editor]")) initializeEditor(node);
+                node.querySelectorAll?.("[data-rich-editor]").forEach(initializeEditor);
+            }
+        }
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
