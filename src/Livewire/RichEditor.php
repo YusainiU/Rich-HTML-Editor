@@ -28,6 +28,8 @@ class RichEditor extends Component
 
     public bool $showWordCount = true;
 
+    public bool $showImageTools = true;
+
     public ?TemporaryUploadedFile $imageUpload = null;
 
     #[Locked]
@@ -38,6 +40,7 @@ class RichEditor extends Component
         ?string $placeholder = null,
         ?int $minHeight = null,
         ?bool $showWordCount = null,
+        ?bool $showImageTools = null,
         ?string $imageDirectory = null,
     ): void {
         $this->value = $value ?? '';
@@ -62,6 +65,8 @@ class RichEditor extends Component
                 true,
             );
 
+        $this->showImageTools = $showImageTools ?? true;
+
         $this->imageDirectory = $imageDirectory
             ?? (string) config(
                 'laravel-rich-editor.images.directory',
@@ -71,6 +76,8 @@ class RichEditor extends Component
 
     public function uploadEditorImage(): ?string
     {
+        abort_unless($this->showImageTools, 403);
+
         $this->validate([
             'imageUpload' => [
                 'required',

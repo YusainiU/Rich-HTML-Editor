@@ -76,6 +76,7 @@
                 title="Insert table">
                 Table
             </button>
+            @if ($showImageTools)
             <button type="button" data-rich-editor-command="insert-image" aria-label="Insert image"
                 title="Insert image from URL">
                 Image
@@ -85,6 +86,7 @@
             <button type="button" data-rich-editor-upload-button title="Upload image" aria-label="Upload image">
                 Upload image
             </button>
+            @endif
         </div>
 
         <div class="lre-toolbar-group" role="group" aria-label="Table editing">
